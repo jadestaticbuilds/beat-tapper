@@ -174,13 +174,13 @@ function buildChart(pid){
     }
   }else{
     /* 303 techno top layer: clap on 2 and 4, offbeat hats,
-       quarter rides, perc doubling the hats late. The 303 line
+       quarter ticks, perc doubling the hats late. The 303 line
        stays in the backing, never under the fingers. */
     for(var k=0;k<18;k++){
       var q=k*8;
       N(q+2,0,'clap'); N(q+6,0,'clap');
       if(k>=3){ N(q+1,1,'hat'); N(q+3,1,'hat'); N(q+5,1,'hat'); N(q+7,1,'hat'); }
-      if(k>=6){ N(q+0,2,'ride'); N(q+4,2,'ride'); }
+      if(k>=6){ N(q+0,2,'chtick'); N(q+4,2,'chtick'); }
       if(k>=9){ N(q+1,3,'perc'); N(q+5,3,'perc'); }
     }
   }
@@ -188,7 +188,7 @@ function buildChart(pid){
      When three voices collide, the lowest-priority one yields. The
      backbeat (clap/snare) always survives; the kick never sits out
      of the lofi groove. */
-  var KEEP={clap:6,snare:6,kicksoft:6,kick:5,perc:4,ohat:3,hat:3,ride:3,rim:2,shaker:2};
+  var KEEP={clap:6,snare:6,kicksoft:6,kick:5,perc:4,ohat:3,hat:3,chtick:3,rim:2,shaker:2};
   var byStep={};
   s.forEach(function(n){(byStep[n.step]=byStep[n.step]||[]).push(n);});
   s=[];
@@ -205,41 +205,66 @@ function buildChart(pid){
    live here only, never under the fingers. Fractional steps allowed. */
 function buildBacking(pid){
   var b=[];
-  function B(step,snd,f,vol){ b.push({step:step,snd:snd,f:f||0,vol:vol}); }
+  function B(step,snd,f,vol,cut){ b.push({step:step,snd:snd,f:f||0,vol:vol,cut:cut||0}); }
   var bar, o, st, e;
   if(pid==='kick'){
-    /* deep house bed: four-floor kick, rolling 8th bassline (F minor),
-       quiet Fm7 stabs on the offbeats */
-    var roots=[43.65,43.65,51.91,43.65,65.41,43.65,58.27,51.91];
+    /* deep house bed: four-floor kick, rolling 8th bassline following a
+       Fm7 - Dbmaj7 - Abmaj7 - Bbm7 - C turnaround, stabs on the offbeats,
+       busier top in the second half, sparkle every 4 bars */
+    var shape=[0,0,3,0,7,0,5,3];
+    var secs=[
+      {b0:0,b1:4,root:43.65,ch:'chord',cf:174.61},
+      {b0:4,b1:8,root:34.65,ch:'chordM',cf:138.59},
+      {b0:8,b1:12,root:51.91,ch:'chordM',cf:103.83},
+      {b0:12,b1:14,root:58.27,ch:'chord',cf:116.54},
+      {b0:14,b1:16,root:65.41,ch:'chord',cf:130.81}
+    ];
+    var sparks=[880,698.46,622.25,880];
     for(bar=0;bar<16;bar++){
       o=bar*8;
+      var sec=secs[0];
+      for(var si=0;si<secs.length;si++){ if(bar>=secs[si].b0&&bar<secs[si].b1){ sec=secs[si]; break; } }
       for(st=0;st<8;st+=2) B(o+st,'kick',0,0.9);
-      for(e=0;e<8;e++) B(o+e,'bass',roots[e],e%2===0?0.5:0.42);
-      B(o+1,'chord',174.61,0.22); B(o+5,'chord',174.61,0.22);
+      for(e=0;e<8;e++){
+        var bf=sec.root*Math.pow(2,shape[e]/12);
+        B(o+e,'bass',bf,e%2===0?0.5:0.42);
+      }
+      B(o+1,sec.ch,sec.cf,0.22); B(o+5,sec.ch,sec.cf,0.22);
+      if(bar>=8){ B(o+3,sec.ch,sec.cf,0.13); B(o+7,sec.ch,sec.cf,0.13); }
+      if(bar%4===3) B(o+6,'spark',sparks[(bar-3)/4],0.10);
     }
   }else if(pid==='bass'){
-    /* lofi bed: mellow bass roots (Fm Fm Bb C, 3 bars each),
-       vinyl crackle is looped separately at run start */
-    var lofiRoots=[43.65,43.65,58.27,65.41];
+    /* lofi bed: dusty Rhodes 9th chords (Fm9 Bbm9 Dbmaj9 Cm9, 3 bars
+       each), mellow bass roots, soft plucked answers, vinyl crackle */
+    var epRoots=[87.31,116.54,138.59,130.81];
+    var melLine=[440,523.25,415.30,392.00,440,349.23];
     for(bar=0;bar<12;bar++){
       o=bar*8;
-      var r=lofiRoots[Math.floor(bar/3)%4];
-      B(o,'bassm',r,0.55); B(o+5,'bassm',r,0.4);
+      var qi2=Math.floor(bar/3)%4;
+      B(o,'ep',epRoots[qi2],0.30); B(o+5,'ep',epRoots[qi2],0.20);
+      var lr=[43.65,43.65,58.27,65.41][qi2];
+      B(o,'bassm',lr,0.55); B(o+5,'bassm',lr,0.4);
+      if(bar%2===1) B(o+2,'mel',melLine[(bar-1)/2],0.10);
     }
   }else{
-    /* techno bed: driving kick plus a rolling 16th 303 line (A minor),
-       2-bar loop, accents on the quarter */
-    var line=[55,0,55,65.41, 0,55,0,82.41, 55,0,65.41,73.42, 82.41,0,98,82.41,
-              55,0,55,65.41, 0,82.41,0,98, 110,0,98,82.41, 73.42,65.41,55,49];
+    /* techno bed: driving kick, 303 in three sections (sparse quarters,
+       rolling 16ths, dense octave jumps) with the filter opening up,
+       riser into the dense part */
+    var sparse=[55,0,0,0, 65.41,0,0,0, 55,0,0,0, 82.41,0,73.42,0];
+    var roll=[55,0,55,65.41, 0,55,0,82.41, 55,0,65.41,73.42, 82.41,0,98,82.41];
+    var dense=[55,55,0,55, 65.41,0,82.41,98, 110,0,98,82.41, 73.42,65.41,55,49];
     for(bar=0;bar<18;bar++){
       o=bar*8;
       for(st=0;st<8;st+=2) B(o+st,'kick',0,0.95);
-      if(bar%2===0){
-        for(var sx=0;sx<32;sx++){
-          var fr=line[sx];
-          if(fr>0) B(o+sx*0.5,'acid',fr,(sx%4===0)?0.5:0.38);
-        }
+      var ln, cutv;
+      if(bar<6){ ln=sparse; cutv=1400; }
+      else if(bar<12){ ln=roll; cutv=2800; }
+      else { ln=dense; cutv=4200; }
+      for(var sx=0;sx<16;sx++){
+        var fr=ln[sx];
+        if(fr>0) B(o+sx*0.5,'acid',fr,(sx%4===0)?0.5:0.38,cutv);
       }
+      if(bar===10) B(o,'riser',0,0.5);
     }
   }
   b.sort(function(a,c){return a.step-c.step;});
@@ -317,9 +342,9 @@ function voice(t,peak,a,dec,bus,wet){
   }
   return g;
 }
-function playSound(snd,f,when,vol,pitch,bus){
+function playSound(snd,f,when,vol,pitch,bus,cut){
   if(!AC || !G.sound) return;
-  vol=(vol===undefined)?1:vol; pitch=pitch||1; bus=bus||busBack;
+  vol=(vol===undefined)?1:vol; pitch=pitch||1; bus=bus||busBack; cut=cut||0;
   var t=Math.max(when,AC.currentTime);
   function metal(fr,peak,dec,ftype,ffreq,fq){
     /* metallic stack a la 909 hats: detuned squares through a filter */
@@ -358,8 +383,12 @@ function playSound(snd,f,when,vol,pitch,bus){
     ck.start(t); ck.stop(t+0.05);
   }else if(snd==='hat'){
     metal([587,845,1244,1545,1867,2112],0.36*vol,0.035,'highpass',8500,1);
-  }else if(snd==='ride'){
-    metal([880,1268,1866,2318,2800,3168],0.3*vol,0.4,'bandpass',6000,1);
+  }else if(snd==='chtick'){
+    /* clean techno tick: tight filtered noise, no metallic ring */
+    var nt=AC.createBufferSource(), ht=AC.createBiquadFilter();
+    nt.buffer=noiseBuf; ht.type='highpass'; ht.frequency.value=7000;
+    nt.connect(ht); ht.connect(voice(t,0.3*vol,0.001,0.03,bus,0.04));
+    nt.start(t); nt.stop(t+0.06);
   }else if(snd==='ohat'){
     var n=AC.createBufferSource(), hp=AC.createBiquadFilter();
     n.buffer=noiseBuf; hp.type='highpass'; hp.frequency.value=7500;
@@ -403,8 +432,8 @@ function playSound(snd,f,when,vol,pitch,bus){
     var op=AC.createOscillator();
     op.type='sine'; op.frequency.setValueAtTime(320*pitch,t);
     op.frequency.exponentialRampToValueAtTime(140,t+0.08);
-    op.connect(voice(t,0.5*vol,0.002,0.09,bus,0.1));
-    op.start(t); op.stop(t+0.14);
+    op.connect(voice(t,0.34*vol,0.002,0.06,bus,0.08));
+    op.start(t); op.stop(t+0.1);
   }else if(snd==='bass'){
     /* deep rolling bassline (backing): saturated saw plus sub */
     var o3=AC.createOscillator(), lp=AC.createBiquadFilter();
@@ -429,19 +458,23 @@ function playSound(snd,f,when,vol,pitch,bus){
     oh.start(t); oh.stop(t+0.5);
   }else if(snd==='acid'){
     /* 303-style acid line (backing): squelchy saw through a
-       screaming resonant lowpass with a per-note filter sweep */
+       screaming resonant lowpass with a per-note filter sweep.
+       cut (optional) sets the section's filter base: the line
+       opens up as the arrangement builds. */
     var oa=AC.createOscillator(), fa=AC.createBiquadFilter(), ga=AC.createGain();
+    var base=cut>0?cut:2800;
     oa.type='sawtooth'; oa.frequency.value=(f||55)*pitch;
     fa.type='lowpass'; fa.Q.value=12;
-    fa.frequency.setValueAtTime(2800,t);
-    fa.frequency.exponentialRampToValueAtTime(300,t+0.22);
+    fa.frequency.setValueAtTime(base,t);
+    fa.frequency.exponentialRampToValueAtTime(Math.max(120,base*0.12),t+0.22);
     env(ga,t,0.004,0.5*vol,0.14);
     oa.connect(fa); fa.connect(ga); ga.connect(bus);
     var sa=AC.createGain(); sa.gain.value=0.08; ga.connect(sa); sa.connect(verb);
     oa.start(t); oa.stop(t+0.18);
-  }else if(snd==='chord'){
-    /* deep house stab (backing): minor 7th, soft and short */
-    var fc=(f||174.61), ratios=[1,1.1892,1.4983,1.7818];
+  }else if(snd==='chord'||snd==='chordM'){
+    /* deep house stab (backing): seventh chord, soft and short.
+       chord = minor 7th, chordM = major 7th for the Dbmaj7/Abmaj7 bars */
+    var fc=(f||174.61), ratios=(snd==='chordM')?[1,1.2599,1.4983,1.8877]:[1,1.1892,1.4983,1.7818];
     var gc=AC.createGain(), lc=AC.createBiquadFilter();
     lc.type='lowpass'; lc.frequency.value=1100;
     env(gc,t,0.005,0.16*vol,0.3);
@@ -452,6 +485,52 @@ function playSound(snd,f,when,vol,pitch,bus){
       oq.frequency.value=fc*ratios[qi];
       oq.connect(lc); oq.start(t); oq.stop(t+0.4);
     }
+  }else if(snd==='spark'){
+    /* deep house ear candy (backing): soft high sine ping */
+    var osp=AC.createOscillator();
+    osp.type='sine'; osp.frequency.value=(f||880)*pitch;
+    osp.connect(voice(t,0.5*vol,0.004,0.35,bus,0.3));
+    osp.start(t); osp.stop(t+0.45);
+    var osp2=AC.createOscillator();
+    osp2.type='sine'; osp2.frequency.value=(f||880)*pitch*2;
+    osp2.connect(voice(t,0.15*vol,0.004,0.25,bus,0.2));
+    osp2.start(t); osp2.stop(t+0.35);
+  }else if(snd==='ep'){
+    /* dusty lofi Rhodes (backing): minor 9th, dark and soft */
+    var fe=(f||87.31), ratiosE=[1,1.1892,1.4983,1.7818,2.118];
+    var ge=AC.createGain(), le=AC.createBiquadFilter();
+    le.type='lowpass'; le.frequency.value=900;
+    env(ge,t,0.02,0.20*vol,1.2);
+    le.connect(ge); ge.connect(bus);
+    var se=AC.createGain(); se.gain.value=0.14; ge.connect(se); se.connect(verb);
+    for(var qe=0;qe<ratiosE.length;qe++){
+      var oqe=AC.createOscillator(); oqe.type='triangle';
+      oqe.frequency.value=fe*ratiosE[qe];
+      oqe.connect(le); oqe.start(t); oqe.stop(t+1.6);
+      var oqs=AC.createOscillator(); oqs.type='sine';
+      oqs.frequency.value=fe*ratiosE[qe]*2.001;
+      var gqs=AC.createGain(); gqs.gain.value=0.25;
+      oqs.connect(gqs); gqs.connect(le); oqs.start(t); oqs.stop(t+1.6);
+    }
+  }else if(snd==='mel'){
+    /* lofi answer pluck (backing): soft triangle, short */
+    var oml=AC.createOscillator(), lml=AC.createBiquadFilter();
+    oml.type='triangle'; oml.frequency.value=(f||440)*pitch;
+    lml.type='lowpass'; lml.frequency.value=1200;
+    oml.connect(lml); lml.connect(voice(t,0.5*vol,0.006,0.5,bus,0.15));
+    oml.start(t); oml.stop(t+0.6);
+  }else if(snd==='riser'){
+    /* techno riser (backing): bandpassed noise sweeping up over 2 bars */
+    var nr2=AC.createBufferSource(); nr2.buffer=noiseBuf; nr2.loop=true;
+    var fr2=AC.createBiquadFilter(); fr2.type='bandpass'; fr2.Q.value=1.2;
+    fr2.frequency.setValueAtTime(400,t);
+    fr2.frequency.exponentialRampToValueAtTime(6000,t+3.6);
+    var gr2=AC.createGain();
+    gr2.gain.setValueAtTime(0.0001,t);
+    gr2.gain.exponentialRampToValueAtTime(Math.max(0.4*vol,0.0002),t+3.4);
+    gr2.gain.exponentialRampToValueAtTime(0.0001,t+3.7);
+    nr2.connect(fr2); fr2.connect(gr2); gr2.connect(bus);
+    nr2.start(t); nr2.stop(t+3.8);
   }
 }
 
@@ -486,7 +565,7 @@ function startRun(pid){
   G.notes=chart.map(function(c){
     return {time:G.t0+stepTime(pid,c.step), lane:c.lane, snd:c.snd, f:c.f||0, hit:false, missed:false};
   });
-  G.backing=back.map(function(b){ return {time:G.t0+stepTime(pid,b.step), snd:b.snd, f:b.f||0, vol:b.vol}; });
+  G.backing=back.map(function(b){ return {time:G.t0+stepTime(pid,b.step), snd:b.snd, f:b.f||0, vol:b.vol, cut:b.cut||0}; });
   G.bi=0; G.lastT=G.notes.length?G.notes[G.notes.length-1].time:G.t0;
   /* lofi vinyl crackle: looped bandpassed noise under the whole run */
   if(pid==='bass'){
@@ -526,7 +605,7 @@ setInterval(function(){
   var now=AC.currentTime;
   while(G.bi<G.backing.length && G.backing[G.bi].time<now+LOOKAHEAD){
     var b=G.backing[G.bi];
-    playSound(b.snd,b.f||0,b.time,b.vol,1);
+    playSound(b.snd,b.f||0,b.time,b.vol,1,undefined,b.cut||0);
     if(b.snd==='kick') G.beatPulse=1;
     G.bi++;
   }
