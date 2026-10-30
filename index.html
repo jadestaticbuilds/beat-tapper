@@ -80,7 +80,7 @@ input[type=range]{flex:2; accent-color:var(--cyan); height:36px}
 <div id="app">
   <section id="scr-menu" class="screen on" aria-label="Pattern select">
     <h1>BEAT TAPPER</h1>
-    <p class="tag">Tap the falling notes. You are the music.</p>
+    <p class="tag">Tap the falling notes. You are the music.<br>Two fingers, four lanes.</p>
     <div id="patlist"></div>
     <div class="setrow">
       <label for="sndTgl">Sound</label>
@@ -168,6 +168,18 @@ function buildChart(pid){
       if(k%16===0) s.push({step:k,lane:3,snd:'kick'});
     }
   }
+  /* Two-finger rule: no step may demand more than two simultaneous taps.
+     When three voices collide, the lowest-priority one yields (the kick is
+     the metronomic voice, so it sits out; the groove barely notices). */
+  var KEEP={lead:5,snare:4,bass:3,hat:2,kick:1};
+  var byStep={};
+  s.forEach(function(n){(byStep[n.step]=byStep[n.step]||[]).push(n);});
+  s=[];
+  Object.keys(byStep).forEach(function(st){
+    var g=byStep[st].sort(function(a,b){return KEEP[b.snd]-KEEP[a.snd];});
+    s=s.concat(g.slice(0,2));
+  });
+  s.sort(function(a,b){return a.step-b.step;});
   return s;
 }
 /* backing: soft auto-played beat so the player hears the pulse. {step,snd,vol} */
