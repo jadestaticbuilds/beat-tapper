@@ -3,19 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<meta name="theme-color" content="#070b14">
+<meta name="theme-color" content="#030d09">
 <title>Beat Tapper</title>
 <meta name="description" content="Tap the falling notes on the beat. You are the music. Free, no signup, sounds made in your browser.">
 <style>
 :root{
-  --bg:#070b14; --panel:#0c1322; --ink:#eaf6ff; --mute:#8fa3bd;
-  --cyan:#00f0ff; --mag:#ff2e88; --gold:#f5e6c8; --line:#1b2a44;
-  --perfect:#00f0ff; --good:#7CFC00; --miss:#ff2e55;
+  --bg:#030d09; --panel:#0a1a13; --ink:#eef7f2; --mute:#93ab9e;
+  --jade:#2ee6a8; --emerald:#00a86b; --line:#14382a;
+  --perfect:#2ee6a8; --good:#8ce8b0; --miss:#ff6b6b;
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;height:100%}
 body{
-  background:var(--bg); color:var(--ink);
+  background:
+    radial-gradient(120% 60% at 50% 0%, rgba(0,168,107,.14), transparent 60%),
+    radial-gradient(100% 50% at 85% 100%, rgba(46,230,168,.07), transparent 55%),
+    var(--bg);
+  color:var(--ink);
   font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   overflow:hidden; user-select:none; -webkit-user-select:none; touch-action:manipulation;
 }
@@ -23,7 +27,7 @@ body{
 .screen{display:none; flex:1; flex-direction:column; min-height:0; padding:18px 16px calc(18px + env(safe-area-inset-bottom));}
 .screen.on{display:flex}
 h1{margin:6px 0 2px; font-size:34px; letter-spacing:.14em; text-align:center;
-  background:linear-gradient(180deg,#fff,var(--cyan)); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  background:linear-gradient(180deg,#fff,var(--jade)); -webkit-background-clip:text; background-clip:text; color:transparent;}
 .tag{text-align:center; color:var(--mute); margin:0 0 18px; font-size:15px}
 .patbtn{
   display:block; width:100%; margin:0 0 10px; padding:14px; min-height:64px;
@@ -31,14 +35,14 @@ h1{margin:6px 0 2px; font-size:34px; letter-spacing:.14em; text-align:center;
   font-size:17px; font-weight:700; text-align:left; cursor:pointer;
 }
 .patbtn small{display:block; font-weight:400; color:var(--mute); font-size:13px; margin-top:3px}
-.patbtn:active{border-color:var(--cyan)}
+.patbtn:active{border-color:var(--jade)}
 .setrow{
   display:flex; align-items:center; gap:10px; margin-top:14px; padding:12px 14px;
   background:var(--panel); border:1px solid var(--line); border-radius:14px;
 }
 .setrow label{flex:1; color:var(--mute); font-size:14px}
 .setrow output{color:var(--ink); font-variant-numeric:tabular-nums; min-width:64px; text-align:right}
-input[type=range]{flex:2; accent-color:var(--cyan); height:36px}
+input[type=range]{flex:2; accent-color:var(--jade); height:36px}
 .tgl{min-width:76px; min-height:48px; border-radius:12px; border:1px solid var(--line);
   background:var(--panel); color:var(--ink); font-size:15px; font-weight:700; cursor:pointer}
 .tgl.off{color:var(--mute)}
@@ -47,13 +51,13 @@ input[type=range]{flex:2; accent-color:var(--cyan); height:36px}
 #scr-game{padding:0}
 #hud{display:flex; align-items:center; gap:10px; padding:10px 14px; z-index:2}
 #hud .sc{font-size:20px; font-weight:800; font-variant-numeric:tabular-nums}
-#hud .cb{font-size:14px; color:var(--gold); font-weight:700}
+#hud .cb{font-size:14px; color:var(--jade); font-weight:700}
 #hud .pn{margin-left:auto; font-size:12.5px; color:var(--mute)}
 #stage{position:relative; flex:1; min-height:0}
 #cv{position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none}
 .ov{
   position:absolute; inset:0; display:none; align-items:center; justify-content:center;
-  background:rgba(4,7,14,.78); z-index:5; text-align:center; padding:20px;
+  background:rgba(3,13,9,.8); z-index:5; text-align:center; padding:20px;
 }
 .ov.on{display:flex}
 .ov .box{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:26px 22px; max-width:340px}
@@ -61,19 +65,19 @@ input[type=range]{flex:2; accent-color:var(--cyan); height:36px}
 .ov p{color:var(--mute); margin:0 0 14px}
 .bigbtn{
   display:block; width:100%; margin:8px 0 0; padding:14px; min-height:56px; font-size:17px; font-weight:800;
-  border:0; border-radius:14px; cursor:pointer; color:#04121a;
-  background:linear-gradient(135deg,var(--mag),var(--cyan));
+  border:0; border-radius:14px; cursor:pointer; color:#03120c;
+  background:linear-gradient(135deg,var(--emerald),var(--jade));
 }
 .ghostbtn{
   display:block; width:100%; margin:8px 0 0; padding:12px; min-height:52px; font-size:15px; font-weight:700;
   border:1px solid var(--line); border-radius:14px; cursor:pointer; color:var(--ink); background:var(--panel);
 }
 .stats{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:12px 0}
-.stat{background:#0a1120; border:1px solid var(--line); border-radius:10px; padding:10px}
+.stat{background:#0a1a13; border:1px solid var(--line); border-radius:10px; padding:10px}
 .stat b{display:block; font-size:22px; font-variant-numeric:tabular-nums}
 .stat span{font-size:12px; color:var(--mute)}
-.newbest{color:var(--gold); font-weight:800; margin:4px 0 0}
-.count{font-size:64px; font-weight:800; color:var(--cyan); text-align:center}
+.newbest{color:var(--jade); font-weight:800; margin:4px 0 0}
+.count{font-size:64px; font-weight:800; color:var(--jade); text-align:center}
 </style>
 </head>
 <body>
@@ -131,7 +135,7 @@ var PERFECT=0.06, GOOD=0.12, LOOKAHEAD=0.15, APPROACH=1.6;
 var PATTERNS={
   kick:{name:'Four on the Floor', bpm:120, grid:2},
   bass:{name:'Low End', bpm:100, grid:2},
-  arp:{name:'Neon Arp', bpm:128, grid:4}
+  arp:{name:'Neon Arp', bpm:112, grid:2}
 };
 var PENTA=[440,523.25,587.33,659.25,783.99,880];
 
@@ -163,9 +167,11 @@ function buildChart(pid){
       if(j%16===8) s.push({step:j,lane:2,snd:'snare'});
     }
   }else{
-    for(var k=0;k<256;k++){
+    /* Neon Arp, rebuilt for two fingers: 8ths at 112 BPM, kick on the
+       quarter, still the fastest and densest of the three. */
+    for(var k=0;k<128;k++){
       s.push({step:k,lane:k%3,snd:'lead',f:PENTA[k%6]});
-      if(k%16===0) s.push({step:k,lane:3,snd:'kick'});
+      if(k%8===0) s.push({step:k,lane:3,snd:'kick'});
     }
   }
   /* Two-finger rule: no step may demand more than two simultaneous taps.
@@ -180,13 +186,15 @@ function buildChart(pid){
     s=s.concat(g.slice(0,2));
   });
   s.sort(function(a,b){return a.step-b.step;});
+  /* velocity accents: the bar downbeat hits harder, the rest breathe */
+  s.forEach(function(n){ n.v=(n.step%8===0)?1:0.88; });
   return s;
 }
 /* backing: soft auto-played beat so the player hears the pulse. {step,snd,vol} */
 function buildBacking(pid){
-  var b=[], n = pid==='arp'?256 : pid==='bass'?112 : 128;
-  var per = pid==='arp'?4 : 2; /* steps per beat */
-  for(var i=0;i<n;i+=per) b.push({step:i,snd:'kick',vol:0.32});
+  var b=[], n = pid==='arp'?128 : pid==='bass'?112 : 128;
+  var per = 2; /* steps per beat, all patterns */
+  for(var i=0;i<n;i+=per) b.push({step:i,snd:'kick',vol:(i%8===0)?0.36:0.30});
   for(var j=per/2;j<n;j+=per) b.push({step:j,snd:'hat',vol:0.10});
   b.sort(function(a,c){return a.step-c.step;});
   return b;
@@ -198,16 +206,44 @@ if(typeof module!=='undefined' && module.exports){
     classifyHit: classifyHit, comboPitch: comboPitch, stepDur: stepDur,
     PERFECT: PERFECT, GOOD: GOOD};
 }
-/* ============ audio engine (WebAudio synth only) ============ */
-var AC=null, master=null, noiseBuf=null;
+/* ============ audio engine (WebAudio synth only, mixed like a record) ============ */
+var AC=null, master=null, comp=null, busTap=null, busBack=null,
+    verb=null, verbGain=null, noiseBuf=null, drive=null;
+
+function makeImpulse(dur,decay){
+  var rate=AC.sampleRate, len=Math.max(1,Math.floor(rate*dur));
+  var imp=AC.createBuffer(2,len,rate);
+  for(var ch=0;ch<2;ch++){
+    var d=imp.getChannelData(ch);
+    for(var i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,decay);
+  }
+  return imp;
+}
 function ensureAudio(){
   if(AC) return true;
   try{
     var Ctx=window.AudioContext||window.webkitAudioContext;
     AC=new Ctx();
-    master=AC.createGain(); master.gain.value=G.sound?0.9:0; master.connect(AC.destination);
-    var len=Math.floor(AC.sampleRate*0.5), buf=AC.createBuffer(1,len,AC.sampleRate), d=buf.getChannelData(0);
-    for(var i=0;i<len;i++) d[i]=Math.random()*2-1;
+    /* master -> gentle glue compressor -> out (nothing clips, ever) */
+    master=AC.createGain(); master.gain.value=G.sound?0.9:0;
+    comp=AC.createDynamicsCompressor();
+    comp.threshold.value=-18; comp.knee.value=12; comp.ratio.value=4;
+    comp.attack.value=0.003; comp.release.value=0.22;
+    master.connect(comp); comp.connect(AC.destination);
+    /* two buses: the backing sits under, your taps sit on top */
+    busBack=AC.createGain(); busBack.gain.value=0.8; busBack.connect(master);
+    busTap=AC.createGain(); busTap.gain.value=1.0; busTap.connect(master);
+    /* one small room everything shares */
+    verb=AC.createConvolver(); verb.buffer=makeImpulse(1.1,2.6);
+    verbGain=AC.createGain(); verbGain.gain.value=0.16;
+    verb.connect(verbGain); verbGain.connect(master);
+    /* soft saturation so the bass survives phone speakers */
+    drive=AC.createWaveShaper();
+    var n=256, curve=new Float32Array(n);
+    for(var i=0;i<n;i++){ var x=i/(n-1)*2-1; curve[i]=Math.tanh(2.2*x); }
+    drive.curve=curve;
+    var len=Math.floor(AC.sampleRate*0.5), buf=AC.createBuffer(1,len,AC.sampleRate), dd=buf.getChannelData(0);
+    for(var j=0;j<len;j++) dd[j]=Math.random()*2-1;
     noiseBuf=buf;
     return true;
   }catch(e){ return false; }
@@ -217,40 +253,64 @@ function env(g,t,a,peak,dec){
   g.gain.exponentialRampToValueAtTime(Math.max(peak,0.0002),t+a);
   g.gain.exponentialRampToValueAtTime(0.0001,t+a+dec);
 }
+/* voice: envelope gain into a bus, with a small send to the shared room */
+function voice(t,peak,a,dec,bus,wet){
+  var g=AC.createGain();
+  env(g,t,a,peak,dec);
+  g.connect(bus);
+  if(wet>0){
+    var s=AC.createGain(); s.gain.value=wet;
+    g.connect(s); s.connect(verb);
+  }
+  return g;
+}
 function playSound(snd,f,when,vol,pitch){
   if(!AC || !G.sound) return;
   vol=(vol===undefined)?1:vol; pitch=pitch||1;
   var t=Math.max(when,AC.currentTime);
   if(snd==='kick'){
-    var o=AC.createOscillator(), g=AC.createGain();
-    o.type='sine'; o.frequency.setValueAtTime(150*pitch,t);
-    o.frequency.exponentialRampToValueAtTime(42,t+0.12);
-    env(g,t,0.004,0.9*vol,0.26); o.connect(g); g.connect(master);
-    o.start(t); o.stop(t+0.32);
+    var o=AC.createOscillator();
+    o.type='sine'; o.frequency.setValueAtTime(160*pitch,t);
+    o.frequency.exponentialRampToValueAtTime(43,t+0.11);
+    o.connect(voice(t,0.85*vol,0.004,0.24,busBack,0.05));
+    o.start(t); o.stop(t+0.3);
+    /* click transient so the kick reads on small speakers */
+    var cn=AC.createBufferSource(), chp=AC.createBiquadFilter();
+    cn.buffer=noiseBuf; chp.type='highpass'; chp.frequency.value=4000;
+    cn.connect(chp); chp.connect(voice(t,0.18*vol,0.001,0.02,busBack,0));
+    cn.start(t); cn.stop(t+0.05);
   }else if(snd==='hat'){
-    var n=AC.createBufferSource(), hp=AC.createBiquadFilter(), g2=AC.createGain();
-    n.buffer=noiseBuf; hp.type='highpass'; hp.frequency.value=7000;
-    env(g2,t,0.002,0.22*vol,0.05); n.connect(hp); hp.connect(g2); g2.connect(master);
-    n.start(t); n.stop(t+0.09);
+    var n=AC.createBufferSource(), hp=AC.createBiquadFilter();
+    n.buffer=noiseBuf; hp.type='highpass'; hp.frequency.value=7500;
+    n.connect(hp); hp.connect(voice(t,0.16*vol,0.002,0.045,busBack,0.08));
+    n.start(t); n.stop(t+0.08);
   }else if(snd==='snare'){
-    var n2=AC.createBufferSource(), bp=AC.createBiquadFilter(), g3=AC.createGain();
-    n2.buffer=noiseBuf; bp.type='bandpass'; bp.frequency.value=1800;
-    env(g3,t,0.002,0.5*vol,0.12); n2.connect(bp); bp.connect(g3); g3.connect(master);
-    n2.start(t); n2.stop(t+0.16);
-    var o2=AC.createOscillator(), g4=AC.createGain();
-    o2.type='triangle'; o2.frequency.value=190*pitch;
-    env(g4,t,0.002,0.3*vol,0.09); o2.connect(g4); g4.connect(master);
-    o2.start(t); o2.stop(t+0.13);
+    var n2=AC.createBufferSource(), bp=AC.createBiquadFilter();
+    n2.buffer=noiseBuf; bp.type='bandpass'; bp.frequency.value=1900; bp.Q.value=0.9;
+    n2.connect(bp); bp.connect(voice(t,0.42*vol,0.002,0.11,busBack,0.10));
+    n2.start(t); n2.stop(t+0.15);
+    var o2=AC.createOscillator();
+    o2.type='triangle'; o2.frequency.setValueAtTime(200*pitch,t);
+    o2.frequency.exponentialRampToValueAtTime(150,t+0.08);
+    o2.connect(voice(t,0.32*vol,0.002,0.085,busBack,0.06));
+    o2.start(t); o2.stop(t+0.12);
   }else if(snd==='bass'){
-    var o3=AC.createOscillator(), lp=AC.createBiquadFilter(), g5=AC.createGain();
+    var o3=AC.createOscillator(), lp=AC.createBiquadFilter();
     o3.type='sawtooth'; o3.frequency.value=(f||55)*pitch;
-    lp.type='lowpass'; lp.frequency.value=850;
-    env(g5,t,0.006,0.5*vol,0.3); o3.connect(lp); lp.connect(g5); g5.connect(master);
-    o3.start(t); o3.stop(t+0.38);
+    lp.type='lowpass'; lp.frequency.value=700; lp.Q.value=0.7;
+    o3.connect(drive); drive.connect(lp); lp.connect(voice(t,0.5*vol,0.008,0.3,busBack,0.04));
+    o3.start(t); o3.stop(t+0.4);
+    /* sub layer for weight where speakers can reach */
+    var sub=AC.createOscillator();
+    sub.type='sine'; sub.frequency.value=(f||55)*pitch;
+    sub.connect(voice(t,0.22*vol,0.008,0.22,busBack,0));
+    sub.start(t); sub.stop(t+0.3);
   }else if(snd==='lead'){
-    var o4=AC.createOscillator(), g6=AC.createGain();
-    o4.type='square'; o4.frequency.value=(f||440)*pitch;
-    env(g6,t,0.004,0.22*vol,0.16); o4.connect(g6); g6.connect(master);
+    /* pluck, not buzz: softened saw through a tracking lowpass, sits above the mix */
+    var o4=AC.createOscillator(), llp=AC.createBiquadFilter();
+    o4.type='sawtooth'; o4.frequency.value=(f||440)*pitch;
+    llp.type='lowpass'; llp.frequency.value=Math.min(3*(f||440),6500); llp.Q.value=1.1;
+    o4.connect(llp); llp.connect(voice(t,0.5*vol,0.003,0.17,busTap,0.12));
     o4.start(t); o4.stop(t+0.22);
   }
 }
@@ -355,7 +415,7 @@ function tapLane(lane,when){
   if(cls==='perfect'){ G.perfects++; G.combo++; G.score+=300+G.combo*2; setJudge('PERFECT','perfect'); }
   else { G.goods++; G.combo++; G.score+=100+G.combo*2; setJudge('GOOD','good'); }
   if(G.combo>G.maxCombo) G.maxCombo=G.combo;
-  playSound(best.snd,best.f,when,1,pitch);
+  playSound(best.snd,best.f,when,(best.v||1),pitch);
   spawnBurst(lane,cls);
   updateHud();
 }
@@ -367,7 +427,7 @@ function spawnBurst(lane,cls){
     G.particles.push({x:r.cx+(Math.random()-0.5)*r.w*0.5, y:r.hy,
       vx:(Math.random()-0.5)*320, vy:-Math.random()*260-40,
       life:0.45+Math.random()*0.25, t:0,
-      col:cls==='perfect'?'#00f0ff':'#7CFC00'});
+      col:cls==='perfect'?'#2ee6a8':'#8ce8b0'});
   }
 }
 
@@ -390,15 +450,15 @@ function rr(x,y,w,h,r){
   cx.moveTo(x+r,y); cx.arcTo(x+w,y,x+w,y+h,r); cx.arcTo(x+w,y+h,x,y+h,r);
   cx.arcTo(x,y+h,x,y,r); cx.arcTo(x,y,x+w,y,r); cx.closePath();
 }
-var LANE_COL=['#ff2e88','#00f0ff','#7CFC00','#f5e6c8'];
+var LANE_COL=['#2ee6a8','#00c9a7','#8ce8b0','#e6f7ee'];
 
 function draw(now,dt){
   cx.clearRect(0,0,W,H);
   /* beat-pulsing background */
   if(!G.reduced && G.beatPulse>0.01){
     var g=cx.createRadialGradient(W/2,H*0.4,10,W/2,H*0.4,W*0.7);
-    g.addColorStop(0,'rgba(0,240,255,'+(0.10*G.beatPulse)+')');
-    g.addColorStop(1,'rgba(0,240,255,0)');
+    g.addColorStop(0,'rgba(46,230,168,'+(0.10*G.beatPulse)+')');
+    g.addColorStop(1,'rgba(46,230,168,0)');
     cx.fillStyle=g; cx.fillRect(0,0,W,H);
     G.beatPulse*=Math.pow(0.02,dt);
   }
@@ -406,9 +466,9 @@ function draw(now,dt){
   /* lanes */
   for(i=0;i<LANES;i++){
     r=laneRect(i);
-    cx.fillStyle='rgba(12,19,34,0.55)';
+    cx.fillStyle='rgba(10,26,19,0.55)';
     cx.fillRect(r.x+2,0,r.w-4,H);
-    cx.strokeStyle='#1b2a44'; cx.lineWidth=1;
+    cx.strokeStyle='#14382a'; cx.lineWidth=1;
     cx.beginPath(); cx.moveTo(r.x,0); cx.lineTo(r.x,H); cx.stroke();
     if(G.flashes[i]>0.01){
       cx.fillStyle='rgba(255,255,255,'+(0.25*G.flashes[i])+')';
@@ -418,7 +478,7 @@ function draw(now,dt){
   }
   /* hit line */
   var hy=H*0.84;
-  cx.strokeStyle='rgba(0,240,255,0.7)'; cx.lineWidth=3;
+  cx.strokeStyle='rgba(46,230,168,0.7)'; cx.lineWidth=3;
   cx.beginPath(); cx.moveTo(0,hy); cx.lineTo(W,hy); cx.stroke();
   /* notes */
   if(G.playing && AC){
@@ -450,7 +510,7 @@ function draw(now,dt){
     G.judgeT+=dt;
     if(G.judgeT>0.7) G.judge=null;
     else{
-      var col=G.judge.cls==='perfect'?'#00f0ff':G.judge.cls==='good'?'#7CFC00':'#ff2e55';
+      var col=G.judge.cls==='perfect'?'#2ee6a8':G.judge.cls==='good'?'#8ce8b0':'#ff6b6b';
       cx.globalAlpha=1-G.judgeT/0.7;
       cx.fillStyle=col; cx.font='800 30px system-ui,sans-serif';
       cx.textAlign='center';
