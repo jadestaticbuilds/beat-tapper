@@ -3,6 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<script>
+/* ?view=desktop preview: force desktop theme on narrow screens */
+try {
+  if (new URLSearchParams(location.search).get("view") === "desktop") {
+    document.querySelector('meta[name="viewport"]').setAttribute("content", "width=1280");
+  }
+} catch (e) {}
+</script>
 <meta name="theme-color" content="#030d09">
 <title>Beat Tapper</title>
 <meta name="description" content="Tap the falling drums on the beat. You are the groove. Free, no signup, sounds made in your browser.">
@@ -78,6 +86,15 @@ input[type=range]{flex:2; accent-color:var(--jade); height:36px}
 .stat span{font-size:12px; color:var(--mute)}
 .newbest{color:var(--jade); font-weight:800; margin:4px 0 0}
 .count{font-size:64px; font-weight:800; color:var(--jade); text-align:center}
+
+/* --- Desktop (Tier 5 desktop-readiness): 1024px and up only. Phone CSS above untouched. --- */
+@media (min-width:1024px){
+  #app{max-width:680px}
+  h1{font-size:40px}
+}
+@media (min-width:1440px){
+  #app{max-width:780px}
+}
 </style>
 </head>
 <body>
