@@ -153,7 +153,11 @@ var PERFECT=0.06, GOOD=0.12, LOOKAHEAD=0.15, APPROACH=1.6;
 var PATTERNS={
   kick:{name:'Four on the Floor', genre:'deep house', bpm:125, grid:2},
   bass:{name:'Low End', genre:'lofi hip hop', bpm:80, grid:2, swing:0.08},
-  arp:{name:'Acid Techno', genre:'303 techno', bpm:130, grid:2}
+  arp:{name:'Acid Techno', genre:'303 techno', bpm:130, grid:2},
+  dnb:{name:'Liquid Drum & Bass', genre:'drum & bass', bpm:174, grid:2},
+  trap:{name:'Night Trap', genre:'trap', bpm:140, grid:2},
+  house:{name:'Deep House 2', genre:'house', bpm:124, grid:2},
+  techno:{name:'Peak Time', genre:'techno', bpm:135, grid:2}
 };
 
 function classifyHit(dt){
@@ -189,6 +193,48 @@ function buildChart(pid){
       N(p+2,1,'snare'); N(p+6,1,'snare');
       if(j>=3){ for(var h=1;h<8;h+=2) N(p+h,2,'hat'); }
       if(j>=6){ N(p+3,3,'rim'); N(p+7,0,'kicksoft'); }
+    }
+  }else if(pid==='dnb'){
+    /* liquid DnB top layer: snare on 2 and 4, syncopated sub kick,
+       offbeat hats, rolling shaker, perc ghosts late */
+    for(var d1=0;d1<16;d1++){
+      var od=d1*8;
+      N(od+2,0,'snare'); N(od+6,0,'snare');
+      N(od+0,1,'kicksoft'); N(od+5,1,'kicksoft');
+      if(d1>=4){ N(od+1,2,'hat'); N(od+3,2,'hat'); N(od+5,2,'hat'); N(od+7,2,'hat'); }
+      if(d1>=8){ N(od+0,3,'shaker'); N(od+2,3,'shaker'); N(od+4,3,'shaker'); N(od+6,3,'shaker'); }
+      if(d1>=12){ N(od+3,2,'perc'); N(od+7,2,'perc'); }
+    }
+  }else if(pid==='trap'){
+    /* night trap top layer: snare cracks on 3 (half-time), booming
+       kick syncopation, offbeat hats, perc answers, open hat late */
+    for(var t1=0;t1<12;t1++){
+      var ot=t1*8;
+      N(ot+4,0,'snare');
+      N(ot+0,1,'kicksoft'); N(ot+3,1,'kicksoft'); N(ot+6,1,'kicksoft');
+      if(t1>=3){ N(ot+1,2,'hat'); N(ot+3,2,'hat'); N(ot+5,2,'hat'); if(t1<9) N(ot+7,2,'hat'); }
+      if(t1>=6){ N(ot+2,3,'perc'); }
+      if(t1>=9){ N(ot+7,3,'ohat'); }
+    }
+  }else if(pid==='house'){
+    /* deep house 2 top layer: clap on 2 and 4, shuffled offbeat hats,
+       quarter shaker pulse, conga-like perc late */
+    for(var h1=0;h1<16;h1++){
+      var oh=h1*8;
+      N(oh+2,0,'clap'); N(oh+6,0,'clap');
+      if(h1>=2){ N(oh+1,1,'hat'); N(oh+3,1,'hat'); N(oh+5,1,'hat'); N(oh+7,1,'hat'); }
+      if(h1>=6){ N(oh+0,2,'shaker'); N(oh+2,2,'shaker'); N(oh+4,2,'shaker'); N(oh+6,2,'shaker'); }
+      if(h1>=10){ N(oh+3,3,'perc'); N(oh+7,3,'perc'); }
+    }
+  }else if(pid==='techno'){
+    /* peak time techno top layer: clap on 2 and 4, relentless offbeat
+       open hats, quarter ticks, driving perc taking the offbeats late */
+    for(var p1=0;p1<18;p1++){
+      var op=p1*8;
+      N(op+2,0,'clap'); N(op+6,0,'clap');
+      if(p1>=2 && p1<10){ N(op+1,1,'ohat'); N(op+3,1,'ohat'); N(op+5,1,'ohat'); N(op+7,1,'ohat'); }
+      if(p1>=6){ N(op+0,2,'chtick'); N(op+2,2,'chtick'); N(op+4,2,'chtick'); N(op+6,2,'chtick'); }
+      if(p1>=10){ N(op+1,3,'perc'); N(op+3,3,'perc'); N(op+5,3,'perc'); N(op+7,3,'perc'); }
     }
   }else{
     /* 303 techno top layer: clap on 2 and 4, offbeat hats,
@@ -263,6 +309,56 @@ function buildBacking(pid){
       var lr=[43.65,43.65,58.27,65.41][qi2];
       B(o,'bassm',lr,0.55); B(o+5,'bassm',lr,0.4);
       if(bar%2===1) B(o+2,'mel',melLine[(bar-1)/2],0.10);
+    }
+  }else if(pid==='dnb'){
+    /* liquid bed: deep sub roots with syncopated fifth pickups,
+       Rhodes 9th chords (Dm9 Bbmaj9 Fmaj9 C9, 4 bars each),
+       sparse plucked answers */
+    var dnbRoots=[73.42,58.27,87.31,65.41];
+    var dnbLine=[587.33,466.16,523.25,440];
+    for(bar=0;bar<16;bar++){
+      o=bar*8;
+      var dq=Math.floor(bar/4)%4;
+      B(o,'bassm',dnbRoots[dq],0.6);
+      B(o+5,'bassm',dnbRoots[dq]*1.5,0.4);
+      B(o,'ep',dnbRoots[dq]*2,0.28); B(o+4,'ep',dnbRoots[dq]*2,0.18);
+      if(bar%4===2) B(o+6,'mel',dnbLine[dq],0.10);
+    }
+  }else if(pid==='trap'){
+    /* night trap bed: booming 808 roots, dark minor stabs,
+       32nd hat rolls into the snare, riser every 4 bars */
+    var trapRoots=[55,55,43.65,49];
+    for(bar=0;bar<12;bar++){
+      o=bar*8;
+      var tq=trapRoots[Math.floor(bar/3)%4];
+      B(o,'bassm',tq,0.7); B(o+3,'bassm',tq,0.5); B(o+6,'bassm',tq*1.5,0.45);
+      B(o+4,'chord',tq*4,0.14);
+      if(bar>=6){ for(var hr2=0;hr2<4;hr2++) B(o+3+hr2*0.25,'hat',0,0.12); }
+      if(bar%4===3) B(o,'riser',0,0.3);
+    }
+  }else if(pid==='house'){
+    /* deep house 2 bed: four-floor kick, warm rolling bassline on
+       Am F C G, Rhodes-ish stabs, sparkle late */
+    var hRoots=[55,43.65,65.41,49];
+    var hShape=[0,0,7,0,5,0,3,5];
+    for(bar=0;bar<16;bar++){
+      o=bar*8;
+      var hq=hRoots[Math.floor(bar/4)%4];
+      for(st=0;st<8;st+=2) B(o+st,'kick',0,0.85);
+      for(e=0;e<8;e++) B(o+e,'bass',hq*Math.pow(2,hShape[e]/12),e%2===0?0.45:0.38);
+      B(o+2,'chord',hq*4,0.16); B(o+6,'chord',hq*4,0.16);
+      if(bar>=8) B(o+7,'spark',660,0.08);
+    }
+  }else if(pid==='techno'){
+    /* peak time bed: pounding kick, dark minor stabs, sub pulses,
+       riser into the final third */
+    for(bar=0;bar<18;bar++){
+      o=bar*8;
+      for(st=0;st<8;st+=2) B(o+st,'kick',0,0.95);
+      B(o+2,'chord',110,0.18); B(o+6,'chord',110,0.18);
+      B(o,'bassm',55,0.5); B(o+4,'bassm',55,0.4);
+      if(bar>=6) B(o+7,'chtick',0,0.2);
+      if(bar===11) B(o,'riser',0,0.5);
     }
   }else{
     /* techno bed: driving kick, 303 in three sections (sparse quarters,
