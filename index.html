@@ -35,7 +35,10 @@ body{
 .screen{display:none; flex:1; flex-direction:column; min-height:0; padding:18px 16px calc(18px + env(safe-area-inset-bottom));}
 .screen.on{display:flex}
 h1{margin:6px 0 2px; font-size:34px; letter-spacing:.14em; text-align:center;
-  background:linear-gradient(180deg,#fff,var(--jade)); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  background:linear-gradient(180deg,#fff,var(--jade)); -webkit-background-clip:text; background-clip:text; color:transparent;
+  animation:btGlow 3.2s ease-in-out infinite}
+@keyframes btGlow{0%,100%{filter:drop-shadow(0 0 6px rgba(46,230,168,.25))}50%{filter:drop-shadow(0 0 16px rgba(46,230,168,.55))}}
+@media (prefers-reduced-motion: reduce){h1{animation:none}}
 .tag{text-align:center; color:var(--mute); margin:0 0 18px; font-size:15px}
 .patbtn{
   display:block; width:100%; margin:0 0 10px; padding:14px; min-height:64px;
@@ -662,6 +665,9 @@ var G={
   perfects:0, goods:0, misses:0,
   sound:lsGet('bt-sound',true), offset:lsGet('bt-offset',0),
   particles:[], flashes:[0,0,0,0], judge:null, judgeT:0, beatPulse:0, lastBeat:-1,
+  /* Veil Skiff feel: spring receptors, shake, glow rings, parallax dust */
+  shake:0, glows:[], dust:[], dustInit:false, dustW:0, dustH:0,
+  laneSpring:[{x:0,v:0},{x:0,v:0},{x:0,v:0},{x:0,v:0}],
   reduced:typeof matchMedia!=='undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
 };
 var LANES=4;
@@ -762,6 +768,15 @@ function tapLane(lane,when){
   if(G.combo>G.maxCombo) G.maxCombo=G.combo;
   playSound(best.snd,best.f,when,(best.v||1),pitch,busTap);
   spawnBurst(lane,cls);
+  /* Veil Skiff feel: spring-follow receptor kick, shake, glow ring.
+     Timing/scoring untouched — this is visual only. */
+  if(!G.reduced){
+    G.laneSpring[lane].v -= 260;
+    G.shake = cls==='perfect' ? 5 : 2.5;
+    var rr2=laneRect(lane);
+    G.glows.push({x:rr2.cx, y:rr2.hy, t:0, life:0.35, col:cls==='perfect'?'#2ee6a8':'#8ce8b0'});
+    if(G.combo>0 && G.combo%10===0) spawnBurst(lane,'perfect');
+  }
   updateHud();
 }
 
@@ -773,6 +788,14 @@ function spawnBurst(lane,cls){
       vx:(Math.random()-0.5)*320, vy:-Math.random()*260-40,
       life:0.45+Math.random()*0.25, t:0,
       col:cls==='perfect'?'#2ee6a8':'#8ce8b0'});
+  }
+  if(cls==='perfect'){
+    for(var j=0;j<4;j++){
+      var a=Math.random()*Math.PI*2;
+      G.particles.push({x:r.cx, y:r.hy,
+        vx:Math.cos(a)*420, vy:Math.sin(a)*420-120,
+        life:0.6+Math.random()*0.2, t:0, col:'#e6f7ee', spark:true});
+    }
   }
 }
 
@@ -805,9 +828,49 @@ function draw(now,dt){
     g.addColorStop(0,'rgba(46,230,168,'+(0.10*G.beatPulse)+')');
     g.addColorStop(1,'rgba(46,230,168,0)');
     cx.fillStyle=g; cx.fillRect(0,0,W,H);
+    /* second nebula wash, low and teal, breathing with the beat */
+    var g2=cx.createRadialGradient(W*0.15,H*0.75,10,W*0.15,H*0.75,W*0.55);
+    g2.addColorStop(0,'rgba(0,201,167,'+(0.06*G.beatPulse)+')');
+    g2.addColorStop(1,'rgba(0,201,167,0)');
+    cx.fillStyle=g2; cx.fillRect(0,0,W,H);
     G.beatPulse*=Math.pow(0.02,dt);
   }
   var i, r;
+  /* parallax dust: two layers drifting at different speeds, twinkling.
+     Far layer slow and dim, near layer faster and brighter. */
+  if(!G.reduced){
+    if(!G.dustInit || G.dustW!==W || G.dustH!==H){
+      G.dust=[]; G.dustW=W; G.dustH=H;
+      for(i=0;i<26;i++) G.dust.push({x:Math.random()*W, y:Math.random()*H, s:1+Math.random()*1.5, layer:0, tw:Math.random()*Math.PI*2});
+      for(i=0;i<16;i++) G.dust.push({x:Math.random()*W, y:Math.random()*H, s:2+Math.random()*2, layer:1, tw:Math.random()*Math.PI*2});
+      G.dustInit=true;
+    }
+    for(i=0;i<G.dust.length;i++){
+      var d=G.dust[i];
+      d.y += (d.layer?26:12)*(1+G.beatPulse*0.6)*dt;
+      d.tw += dt*2;
+      if(d.y>H+4){ d.y=-4; d.x=Math.random()*W; }
+      cx.globalAlpha=(d.layer?0.5:0.28)*(0.6+0.4*Math.sin(d.tw));
+      cx.fillStyle=d.layer?'#8ce8b0':'#2ee6a8';
+      cx.fillRect(d.x,d.y,d.s,d.s);
+    }
+    cx.globalAlpha=1;
+  }
+  /* lane springs: damped harmonic follow, like the Veil Skiff steering
+     spring. Kicked on every hit, dips the receptor and settles with
+     a little overshoot. */
+  if(!G.reduced){
+    for(i=0;i<LANES;i++){
+      var s=G.laneSpring[i];
+      s.v += (-160*s.x - 13*s.v)*dt;
+      s.x += s.v*dt;
+    }
+    if(G.shake>0.2) G.shake*=Math.pow(0.001,dt); else G.shake=0;
+  }
+  cx.save();
+  if(!G.reduced && G.shake>0.2){
+    cx.translate((Math.random()-0.5)*G.shake,(Math.random()-0.5)*G.shake);
+  }
   /* lanes */
   for(i=0;i<LANES;i++){
     r=laneRect(i);
@@ -821,10 +884,23 @@ function draw(now,dt){
       G.flashes[i]*=Math.pow(0.001,dt);
     }
   }
-  /* hit line */
+  /* hit line: base line plus a spring-dipped glowing segment per lane */
   var hy=H*0.84;
-  cx.strokeStyle='rgba(46,230,168,0.7)'; cx.lineWidth=3;
+  cx.strokeStyle='rgba(46,230,168,0.35)'; cx.lineWidth=3;
   cx.beginPath(); cx.moveTo(0,hy); cx.lineTo(W,hy); cx.stroke();
+  cx.shadowColor='#2ee6a8'; cx.shadowBlur=12;
+  for(i=0;i<LANES;i++){
+    r=laneRect(i);
+    var dy=G.reduced?0:G.laneSpring[i].x;
+    cx.strokeStyle='rgba(46,230,168,0.85)'; cx.lineWidth=3;
+    cx.beginPath(); cx.moveTo(r.x+3,hy+dy); cx.lineTo(r.x+r.w-3,hy+dy); cx.stroke();
+    /* spring receptor ring */
+    cx.strokeStyle=LANE_COL[i]; cx.lineWidth=2;
+    cx.globalAlpha=0.55;
+    cx.beginPath(); cx.arc(r.cx,hy+dy,Math.min(r.w*0.30,34),0,Math.PI*2); cx.stroke();
+    cx.globalAlpha=1;
+  }
+  cx.shadowBlur=0;
   /* notes */
   if(G.playing && AC){
     var t=AC.currentTime;
@@ -836,20 +912,39 @@ function draw(now,dt){
       r=laneRect(n.lane);
       var y=hy-(rem/APPROACH)*(hy+40);
       var rad=Math.min(r.w*0.30,34);
+      cx.shadowColor=LANE_COL[n.lane]; cx.shadowBlur=16;
       cx.fillStyle=LANE_COL[n.lane];
       cx.beginPath(); cx.arc(r.cx,y,rad,0,Math.PI*2); cx.fill();
+      cx.shadowBlur=0;
       cx.fillStyle='rgba(0,0,0,0.35)';
       cx.beginPath(); cx.arc(r.cx,y,rad*0.45,0,Math.PI*2); cx.fill();
     }
   }
-  /* particles */
+  /* particles (friction: velocity decays like Veil Skiff's, plus glow) */
   for(i=G.particles.length-1;i>=0;i--){
     var p=G.particles[i]; p.t+=dt;
     if(p.t>=p.life){ G.particles.splice(i,1); continue; }
+    var fr=Math.pow(0.06,dt);
+    p.vx*=fr; p.vy*=fr;
     p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=500*dt;
-    cx.globalAlpha=1-p.t/p.life; cx.fillStyle=p.col;
-    cx.fillRect(p.x-2,p.y-2,4,4); cx.globalAlpha=1;
+    cx.globalAlpha=1-p.t/p.life;
+    cx.shadowColor=p.col; cx.shadowBlur=p.spark?12:8;
+    cx.fillStyle=p.col;
+    var sz=p.spark?5:4;
+    cx.fillRect(p.x-sz/2,p.y-sz/2,sz,sz);
   }
+  cx.globalAlpha=1; cx.shadowBlur=0;
+  /* hit glow rings: fading radial wash where the note landed */
+  for(i=G.glows.length-1;i>=0;i--){
+    var gl=G.glows[i]; gl.t+=dt;
+    if(gl.t>=gl.life){ G.glows.splice(i,1); continue; }
+    var k=1-gl.t/gl.life, rr3=24+70*(1-k);
+    var gg=cx.createRadialGradient(gl.x,gl.y,2,gl.x,gl.y,rr3);
+    gg.addColorStop(0,gl.col); gg.addColorStop(1,'rgba(46,230,168,0)');
+    cx.globalAlpha=k*0.5; cx.fillStyle=gg;
+    cx.fillRect(gl.x-rr3,gl.y-rr3,rr3*2,rr3*2);
+  }
+  cx.globalAlpha=1;
   /* judgment popup */
   if(G.judge){
     G.judgeT+=dt;
@@ -857,12 +952,15 @@ function draw(now,dt){
     else{
       var col=G.judge.cls==='perfect'?'#2ee6a8':G.judge.cls==='good'?'#8ce8b0':'#ff6b6b';
       cx.globalAlpha=1-G.judgeT/0.7;
+      cx.shadowColor=col; cx.shadowBlur=18;
       cx.fillStyle=col; cx.font='800 30px system-ui,sans-serif';
       cx.textAlign='center';
       cx.fillText(G.judge.txt,W/2,H*0.42-G.judgeT*40);
+      cx.shadowBlur=0;
       cx.globalAlpha=1;
     }
   }
+  cx.restore();
 }
 
 var lastFrame=0;
