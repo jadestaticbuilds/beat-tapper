@@ -666,7 +666,7 @@ var G={
   sound:lsGet('bt-sound',true), offset:lsGet('bt-offset',0),
   particles:[], flashes:[0,0,0,0], judge:null, judgeT:0, beatPulse:0, lastBeat:-1,
   /* Veil Skiff feel: spring receptors, shake, glow rings, parallax dust */
-  shake:0, glows:[], dust:[], dustInit:false, dustW:0, dustH:0,
+  shake:0, shakeX:0, shakeY:0, shakeTx:0, shakeTy:0, shakeT:0, glows:[], dust:[], dustInit:false, dustW:0, dustH:0,
   laneSpring:[{x:0,v:0},{x:0,v:0},{x:0,v:0},{x:0,v:0}],
   reduced:typeof matchMedia!=='undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
 };
@@ -820,24 +820,13 @@ function rr(x,y,w,h,r){
 }
 var LANE_COL=['#2ee6a8','#00c9a7','#8ce8b0','#e6f7ee'];
 
-function draw(now,dt){
-  cx.clearRect(0,0,W,H);
-  /* beat-pulsing background */
-  if(!G.reduced && G.beatPulse>0.01){
-    var g=cx.createRadialGradient(W/2,H*0.4,10,W/2,H*0.4,W*0.7);
-    g.addColorStop(0,'rgba(46,230,168,'+(0.10*G.beatPulse)+')');
-    g.addColorStop(1,'rgba(46,230,168,0)');
-    cx.fillStyle=g; cx.fillRect(0,0,W,H);
-    /* second nebula wash, low and teal, breathing with the beat */
-    var g2=cx.createRadialGradient(W*0.15,H*0.75,10,W*0.15,H*0.75,W*0.55);
-    g2.addColorStop(0,'rgba(0,201,167,'+(0.06*G.beatPulse)+')');
-    g2.addColorStop(1,'rgba(0,201,167,0)');
-    cx.fillStyle=g2; cx.fillRect(0,0,W,H);
-    G.beatPulse*=Math.pow(0.02,dt);
-  }
-  var i, r;
-  /* parallax dust: two layers drifting at different speeds, twinkling.
-     Far layer slow and dim, near layer faster and brighter. */
+/* Fixed-step simulation: all motion state advances here, in constant
+   1/120s steps, so the game moves the same on 60Hz, 90Hz and 120Hz
+   screens and a stutter frame never lurches it. Rendering (draw)
+   only reads state. Mirrors Salt Rush's tick/render split. */
+function step(dt){
+  var i;
+  if(!G.reduced && G.beatPulse>0.01) G.beatPulse*=Math.pow(0.02,dt);
   if(!G.reduced){
     if(!G.dustInit || G.dustW!==W || G.dustH!==H){
       G.dust=[]; G.dustW=W; G.dustH=H;
@@ -850,26 +839,85 @@ function draw(now,dt){
       d.y += (d.layer?26:12)*(1+G.beatPulse*0.6)*dt;
       d.tw += dt*2;
       if(d.y>H+4){ d.y=-4; d.x=Math.random()*W; }
+    }
+    /* lane springs: damped harmonic follow, like the Veil Skiff steering
+       spring. Kicked on every hit, dips the receptor and settles with
+       a little overshoot. Same constants as before (160/13); the fixed
+       step is what makes the settle identical on every screen. */
+    for(i=0;i<LANES;i++){
+      var s=G.laneSpring[i];
+      s.v += (-160*s.x - 13*s.v)*dt;
+      s.x += s.v*dt;
+    }
+    /* smooth shake: ease toward a fresh random target every 50ms
+       instead of teleporting to a new random offset each frame.
+       Same amplitude envelope and decay as before. */
+    if(G.shake>0.2){
+      G.shake*=Math.pow(0.001,dt);
+      G.shakeT-=dt;
+      if(G.shakeT<=0){
+        G.shakeTx=Math.random()-0.5; G.shakeTy=Math.random()-0.5;
+        G.shakeT=0.05;
+      }
+      var ek=Math.min(1,40*dt);
+      G.shakeX+=(G.shakeTx-G.shakeX)*ek;
+      G.shakeY+=(G.shakeTy-G.shakeY)*ek;
+    } else {
+      G.shake=0; G.shakeX=0; G.shakeY=0;
+    }
+  }
+  for(i=0;i<LANES;i++){
+    if(G.flashes[i]>0.01) G.flashes[i]*=Math.pow(0.001,dt);
+  }
+  /* particles (friction: velocity decays like Veil Skiff's, plus glow) */
+  for(i=G.particles.length-1;i>=0;i--){
+    var p=G.particles[i]; p.t+=dt;
+    if(p.t>=p.life){ G.particles.splice(i,1); continue; }
+    var fr=Math.pow(0.06,dt);
+    p.vx*=fr; p.vy*=fr;
+    p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=500*dt;
+  }
+  /* hit glow rings */
+  for(i=G.glows.length-1;i>=0;i--){
+    var gl=G.glows[i]; gl.t+=dt;
+    if(gl.t>=gl.life){ G.glows.splice(i,1); continue; }
+  }
+  /* judgment popup */
+  if(G.judge){
+    G.judgeT+=dt;
+    if(G.judgeT>0.7) G.judge=null;
+  }
+}
+
+function draw(){
+  cx.clearRect(0,0,W,H);
+  /* beat-pulsing background */
+  if(!G.reduced && G.beatPulse>0.01){
+    var g=cx.createRadialGradient(W/2,H*0.4,10,W/2,H*0.4,W*0.7);
+    g.addColorStop(0,'rgba(46,230,168,'+(0.10*G.beatPulse)+')');
+    g.addColorStop(1,'rgba(46,230,168,0)');
+    cx.fillStyle=g; cx.fillRect(0,0,W,H);
+    /* second nebula wash, low and teal, breathing with the beat */
+    var g2=cx.createRadialGradient(W*0.15,H*0.75,10,W*0.15,H*0.75,W*0.55);
+    g2.addColorStop(0,'rgba(0,201,167,'+(0.06*G.beatPulse)+')');
+    g2.addColorStop(1,'rgba(0,201,167,0)');
+    cx.fillStyle=g2; cx.fillRect(0,0,W,H);
+  }
+  var i, r;
+  /* parallax dust: two layers drifting at different speeds, twinkling.
+     Far layer slow and dim, near layer faster and brighter. */
+  if(!G.reduced){
+    for(i=0;i<G.dust.length;i++){
+      var d=G.dust[i];
       cx.globalAlpha=(d.layer?0.5:0.28)*(0.6+0.4*Math.sin(d.tw));
       cx.fillStyle=d.layer?'#8ce8b0':'#2ee6a8';
       cx.fillRect(d.x,d.y,d.s,d.s);
     }
     cx.globalAlpha=1;
   }
-  /* lane springs: damped harmonic follow, like the Veil Skiff steering
-     spring. Kicked on every hit, dips the receptor and settles with
-     a little overshoot. */
-  if(!G.reduced){
-    for(i=0;i<LANES;i++){
-      var s=G.laneSpring[i];
-      s.v += (-160*s.x - 13*s.v)*dt;
-      s.x += s.v*dt;
-    }
-    if(G.shake>0.2) G.shake*=Math.pow(0.001,dt); else G.shake=0;
-  }
   cx.save();
   if(!G.reduced && G.shake>0.2){
-    cx.translate((Math.random()-0.5)*G.shake,(Math.random()-0.5)*G.shake);
+    cx.translate(G.shakeX*G.shake,G.shakeY*G.shake);
   }
   /* lanes */
   for(i=0;i<LANES;i++){
@@ -881,7 +929,6 @@ function draw(now,dt){
     if(G.flashes[i]>0.01){
       cx.fillStyle='rgba(255,255,255,'+(0.25*G.flashes[i])+')';
       cx.fillRect(r.x+2,0,r.w-4,H);
-      G.flashes[i]*=Math.pow(0.001,dt);
     }
   }
   /* hit line: base line plus a spring-dipped glowing segment per lane */
@@ -901,7 +948,10 @@ function draw(now,dt){
     cx.globalAlpha=1;
   }
   cx.shadowBlur=0;
-  /* notes */
+  /* notes: position is a pure function of the audio clock, so travel is
+     perfectly linear in time — the smoothness comes from the fixed-step
+     sim around it, not from changing this curve (it is the player's
+     timing cue, so it stays exactly as it was). */
   if(G.playing && AC){
     var t=AC.currentTime;
     for(i=0;i<G.notes.length;i++){
@@ -920,13 +970,9 @@ function draw(now,dt){
       cx.beginPath(); cx.arc(r.cx,y,rad*0.45,0,Math.PI*2); cx.fill();
     }
   }
-  /* particles (friction: velocity decays like Veil Skiff's, plus glow) */
-  for(i=G.particles.length-1;i>=0;i--){
-    var p=G.particles[i]; p.t+=dt;
-    if(p.t>=p.life){ G.particles.splice(i,1); continue; }
-    var fr=Math.pow(0.06,dt);
-    p.vx*=fr; p.vy*=fr;
-    p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=500*dt;
+  /* particles */
+  for(i=0;i<G.particles.length;i++){
+    var p=G.particles[i];
     cx.globalAlpha=1-p.t/p.life;
     cx.shadowColor=p.col; cx.shadowBlur=p.spark?12:8;
     cx.fillStyle=p.col;
@@ -935,9 +981,8 @@ function draw(now,dt){
   }
   cx.globalAlpha=1; cx.shadowBlur=0;
   /* hit glow rings: fading radial wash where the note landed */
-  for(i=G.glows.length-1;i>=0;i--){
-    var gl=G.glows[i]; gl.t+=dt;
-    if(gl.t>=gl.life){ G.glows.splice(i,1); continue; }
+  for(i=0;i<G.glows.length;i++){
+    var gl=G.glows[i];
     var k=1-gl.t/gl.life, rr3=24+70*(1-k);
     var gg=cx.createRadialGradient(gl.x,gl.y,2,gl.x,gl.y,rr3);
     gg.addColorStop(0,gl.col); gg.addColorStop(1,'rgba(46,230,168,0)');
@@ -947,26 +992,29 @@ function draw(now,dt){
   cx.globalAlpha=1;
   /* judgment popup */
   if(G.judge){
-    G.judgeT+=dt;
-    if(G.judgeT>0.7) G.judge=null;
-    else{
-      var col=G.judge.cls==='perfect'?'#2ee6a8':G.judge.cls==='good'?'#8ce8b0':'#ff6b6b';
-      cx.globalAlpha=1-G.judgeT/0.7;
-      cx.shadowColor=col; cx.shadowBlur=18;
-      cx.fillStyle=col; cx.font='800 30px system-ui,sans-serif';
-      cx.textAlign='center';
-      cx.fillText(G.judge.txt,W/2,H*0.42-G.judgeT*40);
-      cx.shadowBlur=0;
-      cx.globalAlpha=1;
-    }
+    var col=G.judge.cls==='perfect'?'#2ee6a8':G.judge.cls==='good'?'#8ce8b0':'#ff6b6b';
+    cx.globalAlpha=1-G.judgeT/0.7;
+    cx.shadowColor=col; cx.shadowBlur=18;
+    cx.fillStyle=col; cx.font='800 30px system-ui,sans-serif';
+    cx.textAlign='center';
+    cx.fillText(G.judge.txt,W/2,H*0.42-G.judgeT*40);
+    cx.shadowBlur=0;
+    cx.globalAlpha=1;
   }
   cx.restore();
 }
 
-var lastFrame=0;
+/* Fixed-timestep pacing: the sim always advances in 1/120s steps, however
+   fast or uneven the screen's frames are. A dropped frame can't lurch
+   the motion, and 60Hz / 90Hz / 120Hz phones all see the same movement. */
+var SIM_DT=1/120, simAcc=0, lastFrame=0;
 function frame(ts){
-  var dt=Math.min((ts-lastFrame)/1000||0.016,0.05); lastFrame=ts;
-  if(document.getElementById('scr-game').classList.contains('on')) draw(ts/1000,dt);
+  var raw=(ts-lastFrame)/1000||0.016; lastFrame=ts;
+  simAcc+=Math.min(raw,0.1);
+  var n=0;
+  while(simAcc>=SIM_DT && n<8){ step(SIM_DT); simAcc-=SIM_DT; n++; }
+  if(n===8) simAcc=0; /* stall: drop the backlog rather than spiral */
+  if(document.getElementById('scr-game').classList.contains('on')) draw();
   requestAnimationFrame(frame);
 }
 
